@@ -288,7 +288,7 @@ function AIView() {
       const match = q.match(/\b[A-Z]{1,5}\b/);
       const ticker = match ? match[0] : 'NVDA';
 
-      const res = await fetch('https://cavillingly-nonvegetive-aundrea.ngrok-free.dev/analyze', {
+      const res = await fetch('http://127.0.0.1:8000/analyze', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
