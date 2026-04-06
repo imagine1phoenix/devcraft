@@ -16,7 +16,6 @@ export default function AiChatView() {
     setIsLoading(true);
 
     try {
-      // Basic ticker extraction or default
       const match = userText.match(/\b[A-Z]{1,5}\b/);
       const ticker = match ? match[0] : 'NVDA';
 
@@ -44,7 +43,6 @@ export default function AiChatView() {
 
   return (
     <div className="ai-chat-container">
-      {/* Top bar inner area */}
       <div className="chat-top-bar">
         <div className="plan-badge">
           <span className="plan-text">Free Plan</span>
@@ -54,7 +52,6 @@ export default function AiChatView() {
       </div>
 
       {messages.length === 0 ? (
-        {/* Main Empty State */}
         <div className="chat-empty-state">
           <h1 className="chat-greeting">
             What are <span className="greeting-em">we hunting</span> today?
@@ -87,7 +84,7 @@ export default function AiChatView() {
             }}>
               <div style={{
                 width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
-                background: m.role === 'user' ? '#rgba(232,102,10,0.2)' : '#1a0d08',
+                background: m.role === 'user' ? 'rgba(232,102,10,0.2)' : '#1a0d08',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 border: m.role === 'ai' ? '1px solid #e8660a' : 'none',
                 color: '#e8660a'
@@ -126,7 +123,6 @@ export default function AiChatView() {
         </div>
       )}
 
-      {/* Bottom Input Area */}
       <div className="chat-input-wrapper">
         <div className="chat-input-box">
           <div className="input-left-actions">
@@ -159,7 +155,6 @@ export default function AiChatView() {
         </p>
       </div>
 
-      {/* Faint background text watermark */}
       <div className="bg-watermark">FINLYTICS</div>
     </div>
   );
