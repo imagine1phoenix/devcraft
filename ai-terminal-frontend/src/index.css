@@ -1,0 +1,92 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Core Dark Brown Palette */
+  --bg-deepest: #080404;
+  --bg-primary: #0d0604;
+  --bg-secondary: #1a0e0a;
+  --bg-tertiary: #2a1610;
+  --bg-card: #1e120d;
+
+  /* Text */
+  --text-primary: #f0e6dc;
+  --text-secondary: #a89080;
+  --text-muted: #6b5548;
+  --text-cream: #e8d5c4;
+
+  /* Orange Accent System */
+  --accent-orange: #e8660a;
+  --accent-amber: #ff9d2e;
+  --accent-gold: #ffb347;
+  --accent-glow: rgba(232, 102, 10, 0.3);
+  --accent-glow-strong: rgba(232, 102, 10, 0.6);
+  --accent-warm: #c4520a;
+
+  /* Borders */
+  --border-subtle: rgba(232, 102, 10, 0.08);
+  --border-glow: rgba(232, 102, 10, 0.25);
+
+  /* Typography */
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Spacing */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  /* Transitions */
+  --transition-fast: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 800ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-deepest); }
+::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-warm); }
+
+/* Selection */
+::selection {
+  background: var(--accent-glow);
+  color: var(--text-primary);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}

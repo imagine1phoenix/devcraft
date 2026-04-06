@@ -1,0 +1,61 @@
+.stats-card {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition-normal);
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.stats-card.glow-bullish::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: var(--accent-bullish);
+  box-shadow: 0 0 10px var(--accent-bullish);
+}
+
+.stats-card.glow-bearish::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: var(--accent-bearish);
+  box-shadow: 0 0 10px var(--accent-bearish);
+}
+
+.stats-header {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stats-body {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.stats-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stats-trend {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.stats-footer {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
