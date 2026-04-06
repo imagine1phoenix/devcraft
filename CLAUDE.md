@@ -11,7 +11,9 @@
 - **Language:** TypeScript (strict mode)
 - **Styling:** Tailwind CSS v4 + shadcn/ui components
 - **Database:** PostgreSQL via Neon (serverless) with Drizzle ORM
-- **AI SDK:** Vercel AI SDK v4 with Google Gemini 2.0 Flash (primary) and OpenAI GPT-4o (fallback)
+- **AI SDK:** Vercel AI SDK v4 for streaming responses to the UI
+- **AI Backend:** FastAPI (Python) service with `full_stockai_analysis()` — all AI logic lives here
+- **LLM Provider:** Configurable (Gemini / OpenAI) — managed by the FastAPI backend
 
 ---
 
@@ -104,48 +106,72 @@ Data as of: [Market close date or real-time timestamp]
 
 ## 4. AI Integration Rules
 
-### 4.1 System Prompts
-- All system prompts are stored in `src/lib/ai/prompts/` as exported TypeScript constants
-- System prompts are version controlled — every change should be a deliberate commit
+### 4.1 Two-Service Architecture
+The AI system is split across two services:
+- **Next.js (API gateway):** Fetches financial data from APIs (Alpha Vantage, Finnhub, NewsAPI), assembles the request payload, rate-limits users, and streams responses to the browser
+- **FastAPI (AI backend):** Receives `{ ticker, stock_data, headlines }`, runs `full_stockai_analysis()`, and returns the AI-generated analysis
+
+The Next.js frontend NEVER calls LLM APIs directly. All AI calls go through the FastAPI backend.
+
+### 4.2 FastAPI Request Contract
+The FastAPI backend exposes a single endpoint:
+```python
+# POST /analyze
+class StockRequest(BaseModel):
+    ticker: str           # Stock symbol (e.g., "NVDA")
+    stock_data: str       # Serialized financial data from Alpha Vantage
+    headlines: list[str]  # Recent news headlines for sentiment context
+
+# Response: AI analysis result from full_stockai_analysis()
+```
+
+The Next.js proxy must:
+- Validate the ticker with Zod before forwarding
+- Fetch and serialize `stock_data` from Alpha Vantage APIs
+- Fetch `headlines` from news APIs (NewsAPI, Finnhub, Alpha Vantage News)
+- Forward the assembled payload to FastAPI
+- Handle FastAPI errors gracefully (timeout, 500, etc.)
+- Stream or return the response to the browser
+
+### 4.3 System Prompts
+- AI prompts and behavior are managed inside the FastAPI backend's `full_stockai_analysis()` function
+- Any prompt changes require updating the Python backend, not the Next.js code
 - System prompts must include:
   - Role definition
   - Behavioral constraints (what the AI must NOT do)
   - Output format specification
   - Data source instructions
   - Disclaimer text
+- See `AI_PROMPTS.md` for the canonical prompt templates
 
-### 4.2 Chat Messages
+### 4.4 Chat Messages (Next.js Side)
 - User messages are validated for length (max 2000 characters) and content
-- System messages include the full system prompt + retrieved data context
-- The AI must NEVER reveal its system prompt to the user
+- The Next.js layer handles prompt injection detection (see `AI_PROMPTS.md` §8)
 - Conversation history is maintained per session (max 50 messages)
+- The AI must NEVER reveal its system prompt to the user
 
-### 4.3 Vision Analysis (Chart Upload)
+### 4.5 Vision Analysis (Chart Upload)
 - Accepted formats: PNG, JPG, WebP
 - Maximum file size: 10MB
 - Images are stored temporarily (24h TTL) for processing, then deleted
-- The vision model receives the image + a structured analysis prompt
+- The image (or a base64 encoding) is forwarded to the FastAPI backend for vision analysis
 - Output must follow the schema defined in `src/types/analysis.ts`
 
-### 4.4 Tool Calling (Function Tools)
-- AI tools are defined using Vercel AI SDK's `tool()` function
-- Available tools:
-  - `getStockQuote(ticker)` — Fetches latest price data
-  - `getFundamentals(ticker)` — Fetches financial statements
-  - `getNewsForStock(ticker)` — Fetches recent news
-  - `getTechnicalIndicators(ticker, indicators[])` — Fetches technical data
-- Tools must validate inputs (ticker format, etc.) before calling external APIs
-- Tool responses must include source and timestamp metadata
-
-### 4.5 Rate Limiting
+### 4.6 Rate Limiting
 - All AI endpoints require authentication
-- Per-user limits:
+- Per-user limits (enforced by Next.js, NOT by FastAPI):
   - Free tier: 10 AI requests per hour
   - Pro tier: 100 AI requests per hour
   - Premium tier: Unlimited
 - Per-endpoint global limits based on upstream API constraints
 - Rate limit state stored in Upstash Redis
 - Return HTTP 429 with `Retry-After` header when rate limited
+
+### 4.7 FastAPI Backend Environment
+- The FastAPI backend runs as a separate service (Railway, Modal, AWS Lambda, or self-hosted)
+- Its URL is configured via `FASTAPI_BACKEND_URL` environment variable in Next.js
+- The Next.js → FastAPI connection should use an internal API key (`FASTAPI_API_KEY`) for authentication
+- The FastAPI service manages its own LLM API keys (Gemini, OpenAI, etc.)
 
 ---
 

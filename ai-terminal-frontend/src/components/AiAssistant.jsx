@@ -8,13 +8,50 @@ export default function AiAssistant() {
   ]);
   const [input, setInput] = useState('');
 
-  const handleSend = () => {
-    if(!input.trim()) return;
-    setMessages(prev => [...prev, { id: Date.now(), role: 'user', text: input }]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSend = async () => {
+    if(!input.trim() || isLoading) return;
+    
+    const userText = input;
+    setMessages(prev => [...prev, { id: Date.now(), role: 'user', text: userText }]);
     setInput('');
-    setTimeout(() => {
-      setMessages(prev => [...prev, { id: Date.now()+1, role: 'ai', text: "Based on the input, NVDA shows strong upside potential due to its recent breakout in AI data center revenue. It may face short-term resistance near $140." }]);
-    }, 1000);
+    setIsLoading(true);
+
+    try {
+      // Basic heuristic to find a ticker in the input (e.g. NVDA, AAPL) or default to 'NVDA'
+      const match = userText.match(/\b[A-Z]{1,5}\b/);
+      const ticker = match ? match[0] : 'NVDA';
+
+      const res = await fetch('https://cavillingly-nonvegetive-aundrea.ngrok-free.dev/analyze', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+        body: JSON.stringify({
+          ticker: ticker,
+          stock_data: '', // In the future, fetch real data to pass here
+          headlines: []   // In the future, fetch real headlines to pass here
+        })
+      });
+      
+      const data = await res.json();
+      
+      // Handle the case where FastAPI returns a string directly or an object
+      const aiText = typeof data === 'string' ? data : (data.analysis || data.result || JSON.stringify(data));
+      
+      setMessages(prev => [...prev, { id: Date.now()+1, role: 'ai', text: aiText }]);
+    } catch (error) {
+      console.error("AI Analysis failed:", error);
+      setMessages(prev => [...prev, { 
+        id: Date.now()+1, 
+        role: 'ai', 
+        text: "Sorry, I couldn't connect to the AI backend. Is the FastAPI server running on port 8000?" 
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

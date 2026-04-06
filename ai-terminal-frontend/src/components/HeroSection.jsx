@@ -274,19 +274,43 @@ function AIView() {
   const [input, setInput] = useState('');
   const chatEndRef = useRef(null);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
     const q = input;
     setMessages(prev => [...prev, { role: 'user', text: q }]);
     setInput('');
-    setTimeout(() => {
-      const responses = [
-        `Based on recent data, ${q.includes('NVDA') ? 'NVDA' : 'the stock'} shows strong momentum. The RSI is at 62 (not overbought yet), and MACD just crossed bullish on the daily. Key resistance at $142, support at $131.`,
-        `Looking at the fundamentals: Revenue grew 265% YoY driven by AI datacenter demand. P/E is elevated at 64.5x but justified given the growth trajectory. Consensus is "Strong Buy" with $160 target.`,
-        `The technical setup shows a bull flag forming on the 4H chart. Volume has been declining in the consolidation — classic sign of continuation. I'd watch for a breakout above $140 with volume confirmation.`,
-      ];
-      setMessages(prev => [...prev, { role: 'ai', text: responses[Math.floor(Math.random() * responses.length)] }]);
-    }, 800);
+    setIsLoading(true);
+
+    try {
+      // Find a ticker, default NVDA
+      const match = q.match(/\b[A-Z]{1,5}\b/);
+      const ticker = match ? match[0] : 'NVDA';
+
+      const res = await fetch('https://cavillingly-nonvegetive-aundrea.ngrok-free.dev/analyze', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+        body: JSON.stringify({
+          ticker: ticker,
+          stock_data: '',
+          headlines: []
+        })
+      });
+      
+      const data = await res.json();
+      const aiText = typeof data === 'string' ? data : (data.analysis || data.result || JSON.stringify(data));
+      
+      setMessages(prev => [...prev, { role: 'ai', text: aiText }]);
+    } catch (error) {
+       console.error("AI Analysis failed:", error);
+       setMessages(prev => [...prev, { role: 'ai', text: "Sorry, I couldn't connect to Google Colab. Make sure your ngrok tunnel is still running!" }]);
+    } finally {
+       setIsLoading(false);
+    }
   };
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);

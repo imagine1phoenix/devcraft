@@ -52,8 +52,9 @@ MarketMind AI is a **Next.js 14+ full-stack web application** with the following
 ### 1. AI Chat Interface
 - **Input:** Natural language text queries (e.g., "Analyze NVIDIA's growth prospects")
 - **Output:** Structured analysis with cited data sources
-- **Model:** Google Gemini 2.0 Flash (primary), OpenAI GPT-4o (fallback)
-- **Grounding:** All responses MUST be grounded via RAG using real financial data APIs. The LLM must NEVER generate financial numbers from its training data alone.
+- **AI Backend:** FastAPI service running `full_stockai_analysis()` — receives ticker, stock data, and headlines
+- **Data Flow:** Next.js fetches financial data from APIs → sends it to FastAPI → FastAPI runs AI analysis → returns insights
+- **Grounding:** All responses MUST be grounded via real financial data passed to the AI backend. The LLM must NEVER generate financial numbers from its training data alone.
 - **Citation:** Every numerical claim must include the data source and retrieval timestamp
 
 ### 2. Chart Vision Analyzer
@@ -122,6 +123,8 @@ MarketMind AI is a **Next.js 14+ full-stack web application** with the following
 
 ## Tech Stack
 
+### Frontend + API Gateway (Next.js)
+
 | Layer | Technology | Version | Purpose |
 |---|---|---|---|
 | **Framework** | Next.js (App Router) | 14.x+ | Full-stack React framework with SSR |
@@ -129,10 +132,7 @@ MarketMind AI is a **Next.js 14+ full-stack web application** with the following
 | **Styling** | Tailwind CSS | 4.x | Utility-first CSS framework |
 | **UI Components** | shadcn/ui | latest | Accessible, customizable component library |
 | **Charts** | TradingView Lightweight Charts | 4.x | Financial charting library |
-| **AI/LLM** | Vercel AI SDK | 4.x | Unified interface for LLM providers |
-| **LLM Provider (Primary)** | Google Gemini 2.0 Flash | — | Text + Vision capabilities |
-| **LLM Provider (Fallback)** | OpenAI GPT-4o | — | Text + Vision fallback |
-| **Sentiment Model** | FinBERT (HuggingFace) | — | Financial sentiment classification |
+| **AI Streaming** | Vercel AI SDK | 4.x | Stream AI responses to the UI |
 | **Database** | PostgreSQL (Neon) | 16.x | Serverless Postgres |
 | **ORM** | Drizzle ORM | latest | Type-safe SQL queries |
 | **Authentication** | NextAuth.js (Auth.js) | 5.x | OAuth + credentials auth |
@@ -144,6 +144,18 @@ MarketMind AI is a **Next.js 14+ full-stack web application** with the following
 | **File Storage** | Vercel Blob / Cloudflare R2 | — | Chart image uploads |
 | **PDF Generation** | @react-pdf/renderer | — | Research report export |
 | **Validation** | Zod | 3.x | Runtime type validation |
+
+### AI Backend (FastAPI)
+
+| Layer | Technology | Version | Purpose |
+|---|---|---|---|
+| **Framework** | FastAPI | latest | High-performance async Python API |
+| **Language** | Python | 3.11+ | AI/ML ecosystem |
+| **Validation** | Pydantic | 2.x | Request/response validation |
+| **AI Analysis** | `full_stockai_analysis()` | — | Core AI analysis engine (stock data + headlines → insights) |
+| **LLM Provider** | Configurable (Gemini / OpenAI) | — | Underlying LLM used by the analysis engine |
+| **Sentiment Model** | FinBERT (HuggingFace) | — | Financial sentiment classification |
+| **Hosting** | Railway / Modal / AWS Lambda | — | Python runtime for AI backend |
 
 ---
 
@@ -158,19 +170,41 @@ MarketMind AI is a **Next.js 14+ full-stack web application** with the following
                            │ HTTPS
 ┌──────────────────────────▼──────────────────────────────┐
 │                   Next.js API Routes                     │
-│  /api/chat      → AI Chat (Vercel AI SDK + Gemini)      │
-│  /api/analyze   → Chart Image Analysis (Vision API)     │
+│  /api/chat      → Proxies to FastAPI AI Backend         │
+│  /api/analyze   → Proxies to FastAPI AI Backend         │
 │  /api/stock     → Stock Data Proxy (Alpha Vantage)      │
-│  /api/news      → News & Sentiment (NewsAPI + FinBERT)  │
+│  /api/news      → News aggregation (NewsAPI + Finnhub)  │
 │  /api/portfolio → Portfolio CRUD (Drizzle + Neon)       │
-│  /api/report    → AI Report Generation                  │
+│  /api/report    → Proxies to FastAPI AI Backend         │
 │  /api/auth      → Authentication (NextAuth.js v5)       │
 └───────┬──────────┬──────────┬──────────┬────────────────┘
         │          │          │          │
-   ┌────▼───┐ ┌───▼────┐ ┌──▼───┐ ┌───▼─────┐
-   │ Gemini │ │ Alpha  │ │ Neon │ │ Upstash │
-   │ API    │ │Vantage │ │ PG   │ │ Redis   │
-   └────────┘ └────────┘ └──────┘ └─────────┘
+   ┌────▼────────────┐ ┌───▼────┐ ┌──▼───┐ ┌───▼─────┐
+   │  FastAPI (AI)   │ │ Alpha  │ │ Neon │ │ Upstash │
+   │  /analyze       │ │Vantage │ │ PG   │ │ Redis   │
+   │  full_stockai_  │ └────────┘ └──────┘ └─────────┘
+   │  analysis()     │
+   │  ┌────────────┐ │
+   │  │ LLM (Gemini│ │
+   │  │ / OpenAI)  │ │
+   │  └────────────┘ │
+   └─────────────────┘
+```
+
+### Data Flow: AI Analysis Request
+
+```
+1. User types query in chat UI (e.g., "Analyze NVIDIA")
+2. Next.js /api/chat receives the request
+3. Next.js fetches stock_data from Alpha Vantage + headlines from news APIs
+4. Next.js POST to FastAPI /analyze with:
+   {
+     "ticker": "NVDA",
+     "stock_data": "<serialized financial data>",
+     "headlines": ["NVIDIA beats earnings...", ...]
+   }
+5. FastAPI runs full_stockai_analysis() → returns AI analysis
+6. Next.js streams the response back to the browser
 ```
 
 ---
