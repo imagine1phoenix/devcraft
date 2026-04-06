@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import './HeroSection.css';
 
 /* ─── Mock Data ─── */
@@ -540,7 +541,7 @@ export default function HeroSection() {
       </div>
 
       <div className="hero-content post-zoom-content">
-        <a href="#product" className="access-btn">Access Now</a>
+        <Link to="/dashboard" className="access-btn">Access Now</Link>
       </div>
     </section>
   );
