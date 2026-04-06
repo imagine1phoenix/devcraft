@@ -4,6 +4,16 @@ import './DashboardLayout.css';
 export default function DashboardLayout({ children }) {
   return (
     <div className="dashboard-layout">
+      {/* Animated Ambient Background */}
+      <div className="dashboard-ambient-bg">
+        <div className="ambient-orb orb-1"></div>
+        <div className="ambient-orb orb-2"></div>
+        <div className="ambient-orb orb-3"></div>
+      </div>
+
+      {/* Faint Grid Overlay */}
+      <div className="dashboard-grid-overlay"></div>
+
       {/* Persistent Sidebar */}
       <nav className="dashboard-sidebar">
         <div className="sidebar-top">
